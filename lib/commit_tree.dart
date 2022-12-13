@@ -53,11 +53,15 @@ class CommitTreeState extends State<CommitTree> {
         if (line.nextCommit == sha) {
           if (!mainLineFound) {
             mainLineFound = true;
-            linePainters[i] =
-                commit.parents.isNotEmpty ? line.dotAndStraight() : line.dot();
+            linePainters[i] = commit.parents.isNotEmpty
+                ? line.dotAndStraight()
+                : line.startDot();
             if (commit.parents.isNotEmpty) {
               line.nextCommit = commit.parents[0].sha;
               parentsHandled[0] = true;
+            } else {
+              colorPool.relinquishColor(line.color);
+              lines[i] = null;
             }
           } else {
             linePainters[i] = line.fork();
@@ -66,12 +70,17 @@ class CommitTreeState extends State<CommitTree> {
           }
           continue;
         }
-        var fittingNextIdx =
+        // FIXME: This step is important to avoid strange commit-free lines,
+        //        but also might mark all parents of a commit as handled,
+        //        without giving it a dot.
+
+        /*var fittingNextIdx =
             commit.parents.indexWhere((e) => e.sha == line.nextCommit);
         if (fittingNextIdx != -1) {
-          linePainters[i] = line.mergeAndStraight();
+          linePainters[i] = line.straight();
           parentsHandled[fittingNextIdx] = true;
-        }
+          continue;
+        }*/
         linePainters[i] = line.straight();
       }
       for (int i = 0; i < commit.parents.length; i++) {
@@ -81,7 +90,7 @@ class CommitTreeState extends State<CommitTree> {
         line.nextCommit = commit.parents[i].sha;
         LinePainter linePainter;
         if (!mainLineFound) {
-          linePainter = line.dot();
+          linePainter = line.stopDot();
           mainLineFound = true;
         } else {
           linePainter = line.merge();
@@ -163,7 +172,8 @@ class CommitTreeState extends State<CommitTree> {
 }
 
 const double lineWidth = 2;
-const double dotRadius = 6;
+const double linePadding = 2;
+const double dotRadius = 7;
 
 String getCommitMessage(Commit commit) {
   final pos = commit.message.indexOf('\n');
@@ -180,9 +190,18 @@ class Sky extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     var dotIdx =
         row.linePainters.indexWhere((element) => element is DotPainter);
+    if (dotIdx >= 0) {
+      (row.linePainters[dotIdx] as DotPainter)
+          .paintBackground(canvas, size, dotIdx);
+    }
     for (var i = 0; i < row.linePainters.length; ++i) {
+      if (i == dotIdx) continue;
       final painter = row.linePainters[i];
       painter?.paint(canvas, size, i, dotIdx);
+    }
+    if (dotIdx >= 0) {
+      (row.linePainters[dotIdx] as DotPainter)
+          .paint(canvas, size, dotIdx, dotIdx);
     }
 /*    final Rect rect = Offset.zero & Size(lineWidth, size.height);
     final paint = Paint()..color = Colors.blue;
@@ -233,41 +252,103 @@ abstract class LinePainter {
 
 class MergeLinePainter extends LinePainter {
   MergeLinePainter(super.color);
-}
 
-class MergeAndStraigtPainter extends LinePainter {
-  MergeAndStraigtPainter(super.color);
+  @override
+  void paint(Canvas canvas, Size size, int i, int dotIdx) {
+    canvas.drawLine(
+        Offset((dotRadius + lineWidth + linePadding) * i, size.height),
+        Offset((dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
+        ColorPool.PAINT[color]..strokeWidth = lineWidth);
+  }
 }
 
 class ForkLinePainter extends LinePainter {
   ForkLinePainter(super.color);
+
+  @override
+  void paint(Canvas canvas, Size size, int i, int dotIdx) {
+    canvas.drawLine(
+        Offset((dotRadius + lineWidth + linePadding) * i, 0),
+        Offset((dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
+        ColorPool.PAINT[color]..strokeWidth = lineWidth);
+  }
 }
 
 class StraightLinePainter extends LinePainter {
   StraightLinePainter(super.color);
+
+  @override
+  void paint(Canvas canvas, Size size, int i, int dotIdx) {
+    canvas.drawRect(
+        Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
+            Size(lineWidth, size.height),
+        ColorPool.PAINT[color]);
+  }
 }
 
 class DotPainter extends LinePainter {
   DotPainter(super.color);
 
+  @override
   void paint(Canvas canvas, Size size, int i, int dotIdx) {
-    Offset circleMid = Offset((dotRadius + 1) * i, size.height / 2);
-    canvas.drawCircle(circleMid, dotRadius + 1, Paint()..color = Colors.white);
-    canvas.drawCircle(
-        circleMid, dotRadius, Paint()..color = ColorPool.COLORS[color]);
+    Offset circleMid =
+        Offset((dotRadius + lineWidth + linePadding) * i, size.height / 2);
+    //canvas.drawCircle(circleMid, dotRadius + 1, Paint()..color = Colors.white);
+    canvas.drawCircle(circleMid, dotRadius, ColorPool.PAINT[color]);
+  }
+
+  void paintBackground(Canvas canvas, Size size, int i) {
+    Offset circleMid =
+        Offset((dotRadius + lineWidth + linePadding) * i, size.height / 2);
     canvas.drawRect(
         Offset(circleMid.dx, circleMid.dy - dotRadius) &
             Size(size.width - circleMid.dx, dotRadius * 2),
-        Paint()..color = ColorPool.COLORS[color].withAlpha(50));
+        ColorPool.PAINT_TRANSPARENT[color]);
     canvas.drawRect(
         Offset(size.width - 1, circleMid.dy - dotRadius) &
-            Size(1, dotRadius * 2),
-        Paint()..color = ColorPool.COLORS[color]);
+            const Size(1, dotRadius * 2),
+        ColorPool.PAINT[color]);
   }
 }
 
 class StraightDotPainter extends DotPainter {
   StraightDotPainter(super.color);
+
+  @override
+  void paint(Canvas canvas, Size size, int i, int dotIdx) {
+    canvas.drawRect(
+        Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
+            Size(lineWidth, size.height),
+        ColorPool.PAINT[color]);
+    super.paint(canvas, size, i, dotIdx);
+  }
+}
+
+class StartDotPainter extends DotPainter {
+  StartDotPainter(super.color);
+
+  @override
+  void paint(Canvas canvas, Size size, int i, int dotIdx) {
+    canvas.drawRect(
+        Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
+            Size(lineWidth, size.height / 2),
+        ColorPool.PAINT[color]);
+    super.paint(canvas, size, i, dotIdx);
+  }
+}
+
+class StopDotPainter extends DotPainter {
+  StopDotPainter(super.color);
+
+  @override
+  void paint(Canvas canvas, Size size, int i, int dotIdx) {
+    canvas.drawRect(
+        Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2,
+                size.height / 2) &
+            Size(lineWidth, size.height / 2),
+        ColorPool.PAINT[color]);
+    super.paint(canvas, size, i, dotIdx);
+  }
 }
 
 class LinePainterBuilder {
@@ -280,7 +361,9 @@ class LinePainterBuilder {
 
   DotPainter dot() => DotPainter(color);
 
-  MergeAndStraigtPainter mergeAndStraight() => MergeAndStraigtPainter(color);
+  StartDotPainter startDot() => StartDotPainter(color);
+
+  StopDotPainter stopDot() => StopDotPainter(color);
 
   MergeLinePainter merge() => MergeLinePainter(color);
 
@@ -302,6 +385,12 @@ class ColorPool {
     Colors.green,
     Colors.teal
   ];
+
+  static final PAINT =
+      COLORS.map((color) => Paint()..color = color).toList(growable: false);
+  static final PAINT_TRANSPARENT = COLORS
+      .map((color) => Paint()..color = color.withAlpha(50))
+      .toList(growable: false);
 
   var activeAssignments = List<int>.filled(COLORS.length, 0);
   var lastAssignment = 0;
