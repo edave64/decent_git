@@ -374,14 +374,14 @@ class ColorPool {
       .toList(growable: false);
 
   var activeAssignments = List<int>.filled(COLORS.length, 0);
-  var lastAssignment = 0;
+  var lastAssignment = -1;
   var highestAssignments = 0;
 
   int requestColor() {
     var leastAssignmentsI = -1;
     var leastAssignments = highestAssignments + 1;
     for (var i = 0; i < COLORS.length; i++) {
-      final j = (i + lastAssignment) % COLORS.length;
+      final j = (i + lastAssignment + 1) % COLORS.length;
       if (activeAssignments[j] < leastAssignments) {
         leastAssignments = activeAssignments[j];
         leastAssignmentsI = j;
