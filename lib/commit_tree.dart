@@ -73,11 +73,14 @@ class CommitTreeState extends State<CommitTree> {
         // FIXME: This step is important to avoid strange commit-free lines,
         //        but also might mark all parents of a commit as handled,
         //        without giving it a dot.
+        //        Also, such a shortcut line shouldn't be the default, and
+        //        should only be created if it would otherwise force the
+        //        existence of a new line.
 
         /*var fittingNextIdx =
             commit.parents.indexWhere((e) => e.sha == line.nextCommit);
         if (fittingNextIdx != -1) {
-          linePainters[i] = line.straight();
+          linePainters[i] = line.straightAndMerge();
           parentsHandled[fittingNextIdx] = true;
           continue;
         }*/
@@ -190,36 +193,14 @@ class Sky extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     var dotIdx =
         row.linePainters.indexWhere((element) => element is DotPainter);
-    if (dotIdx >= 0) {
-      (row.linePainters[dotIdx] as DotPainter)
-          .paintBackground(canvas, size, dotIdx);
-    }
+    var dot = row.linePainters[dotIdx] as DotPainter;
+    dot.paintBackground(canvas, size, dotIdx);
     for (var i = 0; i < row.linePainters.length; ++i) {
       if (i == dotIdx) continue;
       final painter = row.linePainters[i];
       painter?.paint(canvas, size, i, dotIdx);
     }
-    if (dotIdx >= 0) {
-      (row.linePainters[dotIdx] as DotPainter)
-          .paint(canvas, size, dotIdx, dotIdx);
-    }
-/*    final Rect rect = Offset.zero & Size(lineWidth, size.height);
-    final paint = Paint()..color = Colors.blue;
-    final gradientRect = Offset(2, size.height / 2 - dotRadius) &
-        Size(size.width, dotRadius * 2);
-    final gradient = Paint()
-      ..shader = LinearGradient(
-          colors: [Colors.blue.withAlpha(20), Colors.blue.withAlpha(80)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          stops: const [0.0, 1.0]).createShader(gradientRect);
-    canvas.drawRect(rect, paint);
-    canvas.drawRect(gradientRect, gradient);
-    canvas.drawRect(
-        Offset(size.width, gradientRect.top) & Size(2, gradientRect.height),
-        paint);
-    canvas.drawCircle(size.centerLeft(const Offset(2, 0)), dotRadius, paint);
- */
+    dot.paint(canvas, size, dotIdx, dotIdx);
   }
 
   // Since this Sky painter has no fields, it always paints
