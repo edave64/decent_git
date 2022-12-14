@@ -134,7 +134,7 @@ class CommitTreeState extends State<CommitTree> {
                 weight: 1,
                 cellBuilder: (context, row) {
                   return CustomPaint(
-                    painter: Sky(row.row),
+                    painter: GraphRowPainter(row.row),
                     child: const SizedBox.expand(child: Text("")),
                   );
                 }),
@@ -184,13 +184,16 @@ String getCommitMessage(Commit commit) {
   return commit.message.substring(0, pos);
 }
 
-class Sky extends CustomPainter {
+class GraphRowPainter extends CustomPainter {
   final CommitEntry row;
 
-  const Sky(this.row);
+  const GraphRowPainter(this.row);
 
   @override
   void paint(Canvas canvas, Size size) {
+    // FIXME: Double iteration of this loop. Since we expect every line to
+    //        contain a dot pointer, maybe we should already construct them
+    //        outside of the list.
     var dotIdx =
         row.linePainters.indexWhere((element) => element is DotPainter);
     var dot = row.linePainters[dotIdx] as DotPainter;
@@ -203,16 +206,11 @@ class Sky extends CustomPainter {
     dot.paint(canvas, size, dotIdx, dotIdx);
   }
 
-  // Since this Sky painter has no fields, it always paints
-  // the same thing and semantics information is the same.
-  // Therefore we return false here. If we had fields (set
-  // from the constructor) then we would return true if any
-  // of them differed from the same fields on the oldDelegate.
   @override
-  bool shouldRepaint(Sky oldDelegate) => false;
+  bool shouldRepaint(GraphRowPainter oldDelegate) => false;
 
   @override
-  bool shouldRebuildSemantics(Sky oldDelegate) => false;
+  bool shouldRebuildSemantics(GraphRowPainter oldDelegate) => false;
 }
 
 class CommitEntry {
