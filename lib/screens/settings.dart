@@ -12,8 +12,6 @@
 // ignore_for_file: constant_identifier_names
 
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:provider/provider.dart';
 
 import '../theme.dart';
@@ -30,62 +28,6 @@ const List<String> accentColorNames = [
   'Teal',
   'Green',
 ];
-
-bool get kIsWindowEffectsSupported {
-  return !kIsWeb &&
-      [
-        TargetPlatform.windows,
-        TargetPlatform.linux,
-        TargetPlatform.macOS,
-      ].contains(defaultTargetPlatform);
-}
-
-const _LinuxWindowEffects = [
-  WindowEffect.disabled,
-  WindowEffect.transparent,
-];
-
-const _WindowsWindowEffects = [
-  WindowEffect.disabled,
-  WindowEffect.solid,
-  WindowEffect.transparent,
-  WindowEffect.aero,
-  WindowEffect.acrylic,
-  WindowEffect.mica,
-  WindowEffect.tabbed,
-];
-
-const _MacosWindowEffects = [
-  WindowEffect.disabled,
-  WindowEffect.titlebar,
-  WindowEffect.selection,
-  WindowEffect.menu,
-  WindowEffect.popover,
-  WindowEffect.sidebar,
-  WindowEffect.headerView,
-  WindowEffect.sheet,
-  WindowEffect.windowBackground,
-  WindowEffect.hudWindow,
-  WindowEffect.fullScreenUI,
-  WindowEffect.toolTip,
-  WindowEffect.contentBackground,
-  WindowEffect.underWindowBackground,
-  WindowEffect.underPageBackground,
-];
-
-List<WindowEffect> get currentWindowEffects {
-  if (kIsWeb) return [];
-
-  if (defaultTargetPlatform == TargetPlatform.windows) {
-    return _WindowsWindowEffects;
-  } else if (defaultTargetPlatform == TargetPlatform.linux) {
-    return _LinuxWindowEffects;
-  } else if (defaultTargetPlatform == TargetPlatform.macOS) {
-    return _MacosWindowEffects;
-  }
-
-  return [];
-}
 
 class Settings extends ScrollablePage {
   Settings({super.key});
@@ -118,55 +60,9 @@ class Settings extends ScrollablePage {
             onChanged: (value) {
               if (value) {
                 appTheme.mode = mode;
-
-                if (kIsWindowEffectsSupported) {
-                  // some window effects require on [dark] to look good.
-                  // appTheme.setEffect(WindowEffect.disabled, context);
-                  appTheme.setEffect(appTheme.windowEffect, context);
-                }
               }
             },
             content: Text('$mode'.replaceAll('ThemeMode.', '')),
-          ),
-        );
-      }),
-      biggerSpacer,
-      Text(
-        'Navigation Pane Display Mode',
-        style: FluentTheme.of(context).typography.subtitle,
-      ),
-      spacer,
-      ...List.generate(PaneDisplayMode.values.length, (index) {
-        final mode = PaneDisplayMode.values[index];
-        return Padding(
-          padding: const EdgeInsetsDirectional.only(bottom: 8.0),
-          child: RadioButton(
-            checked: appTheme.displayMode == mode,
-            onChanged: (value) {
-              if (value) appTheme.displayMode = mode;
-            },
-            content: Text(
-              mode.toString().replaceAll('PaneDisplayMode.', ''),
-            ),
-          ),
-        );
-      }),
-      biggerSpacer,
-      Text('Navigation Indicator',
-          style: FluentTheme.of(context).typography.subtitle),
-      spacer,
-      ...List.generate(NavigationIndicators.values.length, (index) {
-        final mode = NavigationIndicators.values[index];
-        return Padding(
-          padding: const EdgeInsetsDirectional.only(bottom: 8.0),
-          child: RadioButton(
-            checked: appTheme.indicator == mode,
-            onChanged: (value) {
-              if (value) appTheme.indicator = mode;
-            },
-            content: Text(
-              mode.toString().replaceAll('NavigationIndicators.', ''),
-            ),
           ),
         );
       }),
@@ -186,32 +82,6 @@ class Settings extends ScrollablePage {
           );
         }),
       ]),
-      if (kIsWindowEffectsSupported) ...[
-        biggerSpacer,
-        Text(
-          'Window Transparency (${defaultTargetPlatform.toString().replaceAll('TargetPlatform.', '')})',
-          style: FluentTheme.of(context).typography.subtitle,
-        ),
-        spacer,
-        ...List.generate(currentWindowEffects.length, (index) {
-          final mode = currentWindowEffects[index];
-          return Padding(
-            padding: const EdgeInsetsDirectional.only(bottom: 8.0),
-            child: RadioButton(
-              checked: appTheme.windowEffect == mode,
-              onChanged: (value) {
-                if (value) {
-                  appTheme.windowEffect = mode;
-                  appTheme.setEffect(mode, context);
-                }
-              },
-              content: Text(
-                mode.toString().replaceAll('WindowEffect.', ''),
-              ),
-            ),
-          );
-        }),
-      ],
       biggerSpacer,
       Text('Text Direction',
           style: FluentTheme.of(context).typography.subtitle),

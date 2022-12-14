@@ -11,7 +11,6 @@
 import 'package:decent_git/screens/history.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide Page;
 import 'package:flutter/foundation.dart';
-import 'package:flutter_acrylic/flutter_acrylic.dart' as flutter_acrylic;
 import 'package:provider/provider.dart';
 import 'package:system_theme/system_theme.dart';
 import 'package:url_launcher/link.dart';
@@ -37,40 +36,23 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // if it's not on the web, windows or android, load the accent color
-  if (!kIsWeb &&
-      [
-        TargetPlatform.windows,
-        TargetPlatform.android,
-      ].contains(defaultTargetPlatform)) {
+  if ([TargetPlatform.windows].contains(defaultTargetPlatform)) {
     SystemTheme.accentColor.load();
   }
-
   setPathUrlStrategy();
-
-  if (isDesktop) {
-    await flutter_acrylic.Window.initialize();
-    await WindowManager.instance.ensureInitialized();
-    windowManager.waitUntilReadyToShow().then((_) async {
-      await windowManager.setTitleBarStyle(
-        TitleBarStyle.hidden,
-        windowButtonVisibility: false,
-      );
-      await windowManager.setSize(const Size(755, 545));
-      await windowManager.setMinimumSize(const Size(350, 600));
-      await windowManager.center();
-      await windowManager.show();
-      await windowManager.setPreventClose(false);
-      await windowManager.setSkipTaskbar(false);
-    });
-  }
-
+  await WindowManager.instance.ensureInitialized();
   runApp(const MyApp());
-/*
-  DeferredWidget.preload(forms.loadLibrary);
-  DeferredWidget.preload(inputs.loadLibrary);
-  DeferredWidget.preload(navigation.loadLibrary);
-  DeferredWidget.preload(surfaces.loadLibrary);
-  DeferredWidget.preload(theming.loadLibrary);*/
+  await windowManager.waitUntilReadyToShow();
+  await windowManager.setTitleBarStyle(
+    TitleBarStyle.hidden,
+    windowButtonVisibility: false,
+  );
+  //await windowManager.setSize(const Size(755, 545));
+  //await windowManager.setMinimumSize(const Size(350, 600));
+  //await windowManager.center();
+  await windowManager.show();
+  //await windowManager.setPreventClose(false);
+  //await windowManager.setSkipTaskbar(false);
 }
 
 class MyApp extends StatelessWidget {
@@ -78,6 +60,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final focusTheme = FocusThemeData(
+      glowFactor: is10footScreen() ? 2.0 : 0.0,
+    );
+
     return ChangeNotifierProvider(
       create: (_) => AppTheme(),
       builder: (context, _) {
@@ -91,34 +77,21 @@ class MyApp extends StatelessWidget {
             brightness: Brightness.dark,
             accentColor: appTheme.color,
             visualDensity: VisualDensity.standard,
-            focusTheme: FocusThemeData(
-              glowFactor: is10footScreen() ? 2.0 : 0.0,
-            ),
+            focusTheme: focusTheme,
           ),
           theme: ThemeData(
             accentColor: appTheme.color,
             visualDensity: VisualDensity.standard,
-            focusTheme: FocusThemeData(
-              glowFactor: is10footScreen() ? 2.0 : 0.0,
-            ),
+            focusTheme: focusTheme,
           ),
           locale: appTheme.locale,
           builder: (context, child) {
             return Directionality(
               textDirection: appTheme.textDirection,
-              child: NavigationPaneTheme(
-                data: NavigationPaneThemeData(
-                  backgroundColor: appTheme.windowEffect !=
-                          flutter_acrylic.WindowEffect.disabled
-                      ? Colors.transparent
-                      : null,
-                ),
-                child: child!,
-              ),
+              child: child!,
             );
           },
-          initialRoute: '/',
-          routes: {'/': (context) => const MyHomePage()},
+          home: const MyHomePage(),
         );
       },
     );
@@ -172,7 +145,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
     LinkPaneItemAction(
       icon: const Icon(FluentIcons.open_source),
       title: const Text('Source code'),
-      link: 'https://github.com/bdlukaa/fluent_ui',
+      link: 'https://github.com/edave64/decent_git',
       body: const SizedBox.shrink(),
     ),
   ];
@@ -197,12 +170,6 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
       appBar: NavigationAppBar(
         automaticallyImplyLeading: false,
         title: () {
-          if (kIsWeb) {
-            return const Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(appTitle),
-            );
-          }
           return const DragToMoveArea(
             child: Align(
               alignment: AlignmentDirectional.centerStart,
@@ -211,27 +178,13 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
           );
         }(),
         actions: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-          Padding(
-            padding: const EdgeInsetsDirectional.only(end: 8.0),
-            child: ToggleSwitch(
-              content: const Text('Dark Mode'),
-              checked: FluentTheme.of(context).brightness.isDark,
-              onChanged: (v) {
-                if (v) {
-                  appTheme.mode = ThemeMode.dark;
-                } else {
-                  appTheme.mode = ThemeMode.light;
-                }
-              },
-            ),
-          ),
           const ComboBox(items: [
             ComboBoxItem(
               value: "dddg",
               child: Text("dddg"),
             )
           ], value: "dddg"),
-          if (!kIsWeb) const WindowButtons(),
+          const WindowButtons(),
         ]),
       ),
       pane: NavigationPane(
@@ -240,15 +193,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
           setState(() => index = i);
         },
         displayMode: appTheme.displayMode,
-        indicator: () {
-          switch (appTheme.indicator) {
-            case NavigationIndicators.end:
-              return const EndNavigationIndicator();
-            case NavigationIndicators.sticky:
-            default:
-              return const StickyNavigationIndicator();
-          }
-        }(),
+        indicator: const StickyNavigationIndicator(),
         items: originalItems,
         footerItems: footerItems,
       ),

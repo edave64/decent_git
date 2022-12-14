@@ -10,7 +10,6 @@
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:system_theme/system_theme.dart';
 
 enum NavigationIndicators { sticky, end }
@@ -50,28 +49,6 @@ class AppTheme extends ChangeNotifier {
   set indicator(NavigationIndicators indicator) {
     _indicator = indicator;
     notifyListeners();
-  }
-
-  WindowEffect _windowEffect = WindowEffect.disabled;
-
-  WindowEffect get windowEffect => _windowEffect;
-
-  set windowEffect(WindowEffect windowEffect) {
-    _windowEffect = windowEffect;
-    notifyListeners();
-  }
-
-  void setEffect(WindowEffect effect, BuildContext context) {
-    Window.setEffect(
-      effect: effect,
-      color: [
-        WindowEffect.solid,
-        WindowEffect.acrylic,
-      ].contains(effect)
-          ? FluentTheme.of(context).micaBackgroundColor.withOpacity(0.05)
-          : Colors.transparent,
-      dark: FluentTheme.of(context).brightness.isDark,
-    );
   }
 
   TextDirection _textDirection = TextDirection.ltr;
