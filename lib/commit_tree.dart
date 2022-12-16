@@ -3,7 +3,8 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:libgit2dart/libgit2dart.dart';
 
 class CommitTree extends StatefulWidget {
-  const CommitTree({key}) : super(key: key);
+  const CommitTree({key, required this.sourceRepo}) : super(key: key);
+  final Repository sourceRepo;
 
   @override
   CommitTreeState createState() => CommitTreeState();
@@ -17,8 +18,8 @@ class CommitTreeState extends State<CommitTree> {
   @override
   void initState() {
     super.initState();
+    final repo = widget.sourceRepo;
 
-    final repo = Repository.open('/home/edave/Documents/projects/dddg/.git/');
     final walker = RevWalk(repo);
     for (var branch in repo.branches) {
       final sha = branch.target.sha;

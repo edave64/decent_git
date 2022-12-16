@@ -9,8 +9,10 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import 'package:decent_git/screens/history.dart';
+import 'package:decent_git/screens/selectRepo.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide Page;
 import 'package:flutter/foundation.dart';
+import 'package:libgit2dart/libgit2dart.dart';
 import 'package:provider/provider.dart';
 import 'package:system_theme/system_theme.dart';
 import 'package:url_launcher/link.dart';
@@ -111,30 +113,8 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   int index = 0;
 
   final viewKey = GlobalKey();
+  Repository? repo = null;
 
-  final List<NavigationPaneItem> originalItems = [
-    PaneItemHeader(header: const Text('Workspace')),
-    PaneItem(
-      icon: const Icon(FluentIcons.all_apps),
-      title: const Text('History'),
-      body: History(),
-    ),
-    PaneItem(
-      icon: const Icon(FluentIcons.branch_commit),
-      title: const Text('Commit'),
-      body: History(),
-    ),
-    PaneItem(
-      icon: const Icon(FluentIcons.open_folder_horizontal),
-      title: const Text('Browse Repository'),
-      body: History(),
-    ),
-    PaneItemHeader(header: const Text('Branches')),
-    PaneItemHeader(header: const Text('Tags')),
-    PaneItemHeader(header: const Text('Remotes')),
-    PaneItemHeader(header: const Text('Shelf')),
-    PaneItemHeader(header: const Text('Sub-Repositories')),
-  ];
   final List<NavigationPaneItem> footerItems = [
     PaneItemSeparator(),
     PaneItem(
@@ -165,6 +145,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
   @override
   Widget build(BuildContext context) {
     final appTheme = context.watch<AppTheme>();
+    final repo = this.repo;
     return NavigationView(
       key: viewKey,
       appBar: NavigationAppBar(
@@ -177,14 +158,14 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
             ),
           );
         }(),
-        actions: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-          const ComboBox(items: [
+        actions: Row(mainAxisAlignment: MainAxisAlignment.end, children: const [
+          ComboBox(items: [
             ComboBoxItem(
-              value: "dddg",
-              child: Text("dddg"),
+              value: "#new",
+              child: Text("Add new Repository"),
             )
-          ], value: "dddg"),
-          const WindowButtons(),
+          ], value: "#new"),
+          WindowButtons(),
         ]),
       ),
       pane: NavigationPane(
@@ -194,7 +175,58 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
         },
         displayMode: appTheme.displayMode,
         indicator: const StickyNavigationIndicator(),
-        items: originalItems,
+        items: [
+          PaneItemHeader(header: const Text('Workspace')),
+          PaneItem(
+            icon: const Icon(FluentIcons.all_apps),
+            title: const Text('History'),
+            body: repo == null
+                ? SelectRepo(onSelected: (String path) {
+                    final Repository repo;
+                    try {
+                      repo = Repository.open(path);
+                    } catch (e) {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return ContentDialog(
+                              title: const Text("Error"),
+                              content: Text(
+                                  "Failed to open repository '$path'\n\n${e.toString()}"),
+                              actions: [
+                                TextButton(
+                                  child: const Text("OK"),
+                                  onPressed: () {
+                                    Navigator.pop(context, 'User deleted file');
+                                  },
+                                ),
+                              ],
+                            );
+                          });
+                      return;
+                    }
+                    setState(() {
+                      this.repo = repo;
+                    });
+                  })
+                : History(sourceRepo: repo),
+          ),
+          PaneItem(
+            icon: const Icon(FluentIcons.branch_commit),
+            title: const Text('Commit'),
+            body: /* History() */ const Text(""),
+          ),
+          PaneItem(
+            icon: const Icon(FluentIcons.open_folder_horizontal),
+            title: const Text('Browse Repository'),
+            body: const Text(""),
+          ),
+          PaneItemHeader(header: const Text('Branches')),
+          PaneItemHeader(header: const Text('Tags')),
+          PaneItemHeader(header: const Text('Remotes')),
+          PaneItemHeader(header: const Text('Shelf')),
+          PaneItemHeader(header: const Text('Sub-Repositories')),
+        ],
         footerItems: footerItems,
       ),
     );
@@ -202,34 +234,35 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
 
   @override
   void onWindowClose() async {
-    bool _isPreventClose = await windowManager.isPreventClose();
-    if (_isPreventClose) {
-      showDialog(
-        context: context,
-        builder: (_) {
-          return ContentDialog(
-            title: const Text('Confirm close'),
-            content: const Text('Are you sure you want to close this window?'),
-            actions: [
-              FilledButton(
-                child: const Text('Yes'),
-                onPressed: () {
-                  Navigator.pop(context);
-                  windowManager.destroy();
-                },
-              ),
-              Button(
-                child: const Text('No'),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
+    if (!await windowManager.isPreventClose()) return;
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return ContentDialog(
+          title: const Text('Confirm close'),
+          content: const Text('Are you sure you want to close this window?'),
+          actions: [
+            FilledButton(
+              child: const Text('Yes'),
+              onPressed: () {
+                Navigator.pop(context);
+                windowManager.destroy();
+              },
+            ),
+            Button(
+              child: const Text('No'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
+
+  void openRepository() {}
 }
 
 class WindowButtons extends StatelessWidget {

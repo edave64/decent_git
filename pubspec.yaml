@@ -51,6 +51,7 @@ dependencies:
       url: https://github.com/YehudaKremer/flutter_syntax_view.git
   libgit2dart: ^1.2.0
   easy_table: ^2.2.0
+  file_picker: ^5.2.4
 
 dev_dependencies:
   flutter_test:
