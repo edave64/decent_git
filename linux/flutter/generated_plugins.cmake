@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_acrylic
   libgit2dart
   screen_retriever
   url_launcher_linux

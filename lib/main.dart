@@ -12,6 +12,7 @@ import 'package:decent_git/screens/history.dart';
 import 'package:decent_git/screens/selectRepo.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide Page;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_acrylic/flutter_acrylic.dart' as flutter_acrylic;
 import 'package:libgit2dart/libgit2dart.dart';
 import 'package:provider/provider.dart';
 import 'package:system_theme/system_theme.dart';
@@ -41,6 +42,7 @@ void main() async {
     SystemTheme.accentColor.load();
   }
   await WindowManager.instance.ensureInitialized();
+  await flutter_acrylic.Window.initialize();
   runApp(const MyApp());
   await windowManager.waitUntilReadyToShow();
   await windowManager.setTitleBarStyle(
