@@ -16,7 +16,6 @@ import 'package:libgit2dart/libgit2dart.dart';
 import 'package:provider/provider.dart';
 import 'package:system_theme/system_theme.dart';
 import 'package:url_launcher/link.dart';
-import 'package:url_strategy/url_strategy.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'screens/settings.dart';
@@ -41,7 +40,6 @@ void main() async {
   if ([TargetPlatform.windows].contains(defaultTargetPlatform)) {
     SystemTheme.accentColor.load();
   }
-  setPathUrlStrategy();
   await WindowManager.instance.ensureInitialized();
   runApp(const MyApp());
   await windowManager.waitUntilReadyToShow();
