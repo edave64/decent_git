@@ -12,6 +12,7 @@ class CommitGraphBuilder {
     var mainLineFound = false;
     final parents = commit.parents;
     final parentsHandled = List.filled(parents.length, false);
+    final mergeableLines = List.filled(parents.length, -1);
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       if (line == null) {
@@ -37,40 +38,38 @@ class CommitGraphBuilder {
         }
         continue;
       }
-      // FIXME: This step is important to avoid strange commit-free lines,
-      //        but also might mark all parents of a commit as handled,
-      //        without giving it a dot.
-      //        Also, such a shortcut line shouldn't be the default, and
-      //        should only be created if it would otherwise force the
-      //        existence of a new line.
-
-      /*var fittingNextIdx =
-            commit.parents.indexWhere((e) => e.sha == line.nextCommit);
+      if (parents.length > 1) {
+        var fittingNextIdx =
+            parents.indexWhere((e) => e.sha == line.nextCommit);
         if (fittingNextIdx != -1) {
-          linePainters[i] = line.straightAndMerge();
-          parentsHandled[fittingNextIdx] = true;
-          continue;
-        }*/
+          mergeableLines[fittingNextIdx] = i;
+        }
+      }
       linePainters[i] = line.straight();
     }
     for (int i = 0; i < parents.length; i++) {
       if (parentsHandled[i]) continue;
-      var gapIdx = linePainters.indexOf(null);
-      var line = LinePainterBuilder(colorPool.requestColor());
-      line.nextCommit = parents[i].sha;
-      LinePainter linePainter;
-      if (!mainLineFound) {
-        linePainter = line.stopDot();
-        mainLineFound = true;
+      if (mainLineFound && mergeableLines[i] != -1) {
+        final targetI = mergeableLines[i];
+        linePainters[targetI] = lines[targetI]!.mergeAndStraight();
       } else {
-        linePainter = line.merge();
-      }
-      if (gapIdx != -1) {
-        lines[gapIdx] = line;
-        linePainters[gapIdx] = linePainter;
-      } else {
-        lines.add(line);
-        linePainters.add(linePainter);
+        var line = LinePainterBuilder(colorPool.requestColor());
+        line.nextCommit = parents[i].sha;
+        LinePainter linePainter;
+        if (!mainLineFound) {
+          linePainter = line.stopDot();
+          mainLineFound = true;
+        } else {
+          linePainter = line.merge();
+        }
+        var gapIdx = linePainters.indexOf(null);
+        if (gapIdx != -1) {
+          lines[gapIdx] = line;
+          linePainters[gapIdx] = linePainter;
+        } else {
+          lines.add(line);
+          linePainters.add(linePainter);
+        }
       }
     }
     if (!mainLineFound) {
@@ -138,6 +137,22 @@ class MergeLinePainter extends LinePainter {
 
   @override
   void paint(Canvas canvas, Size size, int i, int dotIdx) {
+    canvas.drawLine(
+        Offset((dotRadius + lineWidth + linePadding) * i, size.height),
+        Offset((dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
+        ColorPool.PAINT[color]..strokeWidth = lineWidth);
+  }
+}
+
+class MergeAndStraightPainter extends LinePainter {
+  MergeAndStraightPainter(super.color);
+
+  @override
+  void paint(Canvas canvas, Size size, int i, int dotIdx) {
+    canvas.drawRect(
+        Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
+            Size(lineWidth, size.height),
+        ColorPool.PAINT[color]);
     canvas.drawLine(
         Offset((dotRadius + lineWidth + linePadding) * i, size.height),
         Offset((dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
@@ -249,6 +264,8 @@ class LinePainterBuilder {
   StopDotPainter stopDot() => StopDotPainter(color);
 
   MergeLinePainter merge() => MergeLinePainter(color);
+
+  MergeAndStraightPainter mergeAndStraight() => MergeAndStraightPainter(color);
 
   ForkLinePainter fork() => ForkLinePainter(color);
 
