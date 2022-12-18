@@ -1,192 +1,103 @@
-import 'package:easy_table/easy_table.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:libgit2dart/libgit2dart.dart';
 
-class CommitTree extends StatefulWidget {
-  const CommitTree({key, required this.sourceRepo}) : super(key: key);
-  final Repository sourceRepo;
+class CommitGraphBuilder {
+  var colorPool = ColorPool();
+  var lines = List<LinePainterBuilder?>.empty(growable: true);
 
-  @override
-  CommitTreeState createState() => CommitTreeState();
-}
-
-class CommitTreeState extends State<CommitTree> {
-  String selectedContact = '';
-  List<CommitEntry>? commits;
-  Map<String, List<String>> map = {};
-
-  @override
-  void initState() {
-    super.initState();
-    final repo = widget.sourceRepo;
-
-    final walker = RevWalk(repo);
-    for (var branch in repo.branches) {
-      final sha = branch.target.sha;
-      if (map.containsKey(sha)) {
-        map[sha]!.add(branch.name);
-      } else {
-        map[sha] = [branch.name];
+  CommitGraphRow buildGraphRow(Commit commit) {
+    final sha = commit.oid.sha;
+    final List<LinePainter?> linePainters =
+        List.filled(lines.length, null, growable: true);
+    var mainLineFound = false;
+    final parentsHandled = List.filled(commit.parents.length, false);
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      if (line == null) {
+        linePainters[i] = null;
+        continue;
       }
-      if (branch.target.pointer.address != 0) {
-        walker.push(branch.target);
-      } else {
-        print(branch);
-      }
-    }
-
-    walker.sorting({GitSort.topological, GitSort.time});
-    var colorPool = ColorPool();
-    var lines = List<LinePainterBuilder?>.empty(growable: true);
-    commits = List.empty(growable: true);
-    for (final commit in walker.walk(limit: 1000)) {
-      final sha = commit.oid.sha;
-      final List<LinePainter?> linePainters =
-          List.filled(lines.length, null, growable: true);
-      var mainLineFound = false;
-      final parentsHandled = List.filled(commit.parents.length, false);
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i];
-        if (line == null) {
-          linePainters[i] = null;
-          continue;
-        }
-        if (line.nextCommit == sha) {
-          if (!mainLineFound) {
-            mainLineFound = true;
-            linePainters[i] = commit.parents.isNotEmpty
-                ? line.dotAndStraight()
-                : line.startDot();
-            if (commit.parents.isNotEmpty) {
-              line.nextCommit = commit.parents[0].sha;
-              parentsHandled[0] = true;
-            } else {
-              colorPool.relinquishColor(line.color);
-              lines[i] = null;
-            }
+      if (line.nextCommit == sha) {
+        if (!mainLineFound) {
+          mainLineFound = true;
+          linePainters[i] = commit.parents.isNotEmpty
+              ? line.dotAndStraight()
+              : line.startDot();
+          if (commit.parents.isNotEmpty) {
+            line.nextCommit = commit.parents[0].sha;
+            parentsHandled[0] = true;
           } else {
-            linePainters[i] = line.fork();
             colorPool.relinquishColor(line.color);
             lines[i] = null;
           }
-          continue;
+        } else {
+          linePainters[i] = line.fork();
+          colorPool.relinquishColor(line.color);
+          lines[i] = null;
         }
-        // FIXME: This step is important to avoid strange commit-free lines,
-        //        but also might mark all parents of a commit as handled,
-        //        without giving it a dot.
-        //        Also, such a shortcut line shouldn't be the default, and
-        //        should only be created if it would otherwise force the
-        //        existence of a new line.
+        continue;
+      }
+      // FIXME: This step is important to avoid strange commit-free lines,
+      //        but also might mark all parents of a commit as handled,
+      //        without giving it a dot.
+      //        Also, such a shortcut line shouldn't be the default, and
+      //        should only be created if it would otherwise force the
+      //        existence of a new line.
 
-        /*var fittingNextIdx =
+      /*var fittingNextIdx =
             commit.parents.indexWhere((e) => e.sha == line.nextCommit);
         if (fittingNextIdx != -1) {
           linePainters[i] = line.straightAndMerge();
           parentsHandled[fittingNextIdx] = true;
           continue;
         }*/
-        linePainters[i] = line.straight();
-      }
-      for (int i = 0; i < commit.parents.length; i++) {
-        if (parentsHandled[i]) continue;
-        var gapIdx = linePainters.indexOf(null);
-        var line = LinePainterBuilder(colorPool.requestColor());
-        line.nextCommit = commit.parents[i].sha;
-        LinePainter linePainter;
-        if (!mainLineFound) {
-          linePainter = line.stopDot();
-          mainLineFound = true;
-        } else {
-          linePainter = line.merge();
-        }
-        if (gapIdx != -1) {
-          lines[gapIdx] = line;
-          linePainters[gapIdx] = linePainter;
-        } else {
-          lines.add(line);
-          linePainters.add(linePainter);
-        }
-      }
+      linePainters[i] = line.straight();
+    }
+    for (int i = 0; i < commit.parents.length; i++) {
+      if (parentsHandled[i]) continue;
+      var gapIdx = linePainters.indexOf(null);
+      var line = LinePainterBuilder(colorPool.requestColor());
+      line.nextCommit = commit.parents[i].sha;
+      LinePainter linePainter;
       if (!mainLineFound) {
-        print("No main line found!");
+        linePainter = line.stopDot();
+        mainLineFound = true;
+      } else {
+        linePainter = line.merge();
       }
-      commits!.add(CommitEntry(
-          commit, linePainters, map[commit.oid.sha] ?? List.empty()));
-      for (var i = linePainters.length - 1;
-          i <= 0 && linePainters[i] == null;
-          i--) {
-        linePainters.removeLast();
+      if (gapIdx != -1) {
+        lines[gapIdx] = line;
+        linePainters[gapIdx] = linePainter;
+      } else {
+        lines.add(line);
+        linePainters.add(linePainter);
       }
     }
-  }
+    if (!mainLineFound) {
+      print("No main line found!");
+    }
+    for (var i = linePainters.length - 1;
+        i <= 0 && linePainters[i] == null;
+        i--) {
+      linePainters.removeLast();
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return EasyTableTheme(
-        data: const EasyTableThemeData(
-            columnDividerFillHeight: false,
-            columnDividerThickness: 0,
-            decoration: BoxDecoration(border: null),
-            row: RowThemeData(dividerThickness: 0)),
-        child: EasyTable<CommitEntry>(
-          EasyTableModel<CommitEntry>(rows: commits!, columns: [
-            EasyTableColumn(
-                name: 'Graph',
-                weight: 1,
-                cellBuilder: (context, row) {
-                  return CustomPaint(
-                    painter: GraphRowPainter(row.row),
-                    child: const SizedBox.expand(child: Text("")),
-                  );
-                }),
-            EasyTableColumn(
-                name: 'Description',
-                weight: 5,
-                cellBuilder: (context, row) {
-                  final text = Text(getCommitMessage(row.row.commit));
-                  final branches = row.row.branches;
-
-                  if (branches.isEmpty) return text;
-                  return Row(children: [
-                    text,
-                    ...branches.map((String branch) {
-                      return Padding(
-                          padding: const EdgeInsets.only(left: 4),
-                          child: Chip(
-                            text: Text(branch),
-                          ));
-                    })
-                  ]);
-                },
-                stringValue: (row) => ""),
-            EasyTableColumn(
-                name: 'Commit',
-                weight: 1,
-                stringValue: (row) => row.commit.oid.sha),
-            EasyTableColumn(
-                name: 'Author',
-                weight: 1,
-                stringValue: (row) => row.commit.author.name),
-            EasyTableColumn(
-                name: 'Date', weight: 1, intValue: (row) => row.commit.time)
-          ]),
-          columnsFit: true,
-        ));
+    return CommitGraphRow(linePainters);
   }
+}
+
+class CommitGraphRow {
+  final List<LinePainter?> linePainters;
+
+  CommitGraphRow(this.linePainters);
 }
 
 const double lineWidth = 2;
 const double linePadding = 2;
 const double dotRadius = 7;
 
-String getCommitMessage(Commit commit) {
-  final pos = commit.message.indexOf('\n');
-  if (pos == -1) return commit.message;
-  return commit.message.substring(0, pos);
-}
-
 class GraphRowPainter extends CustomPainter {
-  final CommitEntry row;
+  final CommitGraphRow row;
 
   const GraphRowPainter(this.row);
 
@@ -212,14 +123,6 @@ class GraphRowPainter extends CustomPainter {
 
   @override
   bool shouldRebuildSemantics(GraphRowPainter oldDelegate) => false;
-}
-
-class CommitEntry {
-  final Commit commit;
-  final List<LinePainter?> linePainters;
-  final List<String> branches;
-
-  CommitEntry(this.commit, this.linePainters, this.branches);
 }
 
 abstract class LinePainter {

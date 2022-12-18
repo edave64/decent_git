@@ -1,7 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:libgit2dart/libgit2dart.dart';
 
-import '../commit_tree.dart';
+import '../widgets/commit_history.dart';
 import '../widgets/page.dart' as PageWidget;
 
 class History extends PageWidget.Page {
@@ -21,7 +21,7 @@ class History extends PageWidget.Page {
     if (repo == null) {
       return Text("No Repository selected!");
     } else {
-      return CommitTree(sourceRepo: repo);
+      return CommitHistoryTable(sourceRepo: repo);
     }
   }
 }
