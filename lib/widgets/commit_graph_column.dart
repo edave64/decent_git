@@ -129,88 +129,53 @@ class GraphRowPainter extends CustomPainter {
   bool shouldRebuildSemantics(GraphRowPainter oldDelegate) => false;
 }
 
-abstract class LinePainter {
+class LinePainter {
+  static const typeNone = 0;
+  static const typeStraight = 1;
+  static const typeStart = 2;
+  static const typeStop = 4;
+  static const typeMerge = 8;
+  static const typeFork = 16;
+
   final int color;
+  int type;
 
-  LinePainter(this.color);
+  LinePainter(this.color, this.type);
 
-  void paint(Canvas canvas, Size size, int i, int dotIdx) {}
-}
-
-class MergeLinePainter extends LinePainter {
-  MergeLinePainter(super.color);
-
-  @override
   void paint(Canvas canvas, Size size, int i, int dotIdx) {
-    canvas.drawLine(
-        Offset((dotRadius + lineWidth + linePadding) * i, size.height),
-        Offset((dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
-        ColorPool.PAINT[color]..strokeWidth = lineWidth);
-  }
-}
-
-class MergeAndStraightLinePainter extends LinePainter {
-  MergeAndStraightLinePainter(super.color);
-
-  @override
-  void paint(Canvas canvas, Size size, int i, int dotIdx) {
-    canvas.drawRect(
-        Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
-            Size(lineWidth, size.height),
-        ColorPool.PAINT[color]);
-    canvas.drawLine(
-        Offset((dotRadius + lineWidth + linePadding) * i, size.height),
-        Offset((dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
-        ColorPool.PAINT[color]..strokeWidth = lineWidth);
-  }
-}
-
-class ForkLinePainter extends LinePainter {
-  ForkLinePainter(super.color);
-
-  @override
-  void paint(Canvas canvas, Size size, int i, int dotIdx) {
-    canvas.drawLine(
-        Offset((dotRadius + lineWidth + linePadding) * i, 0),
-        Offset((dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
-        ColorPool.PAINT[color]..strokeWidth = lineWidth);
-  }
-}
-
-class StraightLinePainter extends LinePainter {
-  StraightLinePainter(super.color);
-
-  @override
-  void paint(Canvas canvas, Size size, int i, int dotIdx) {
-    canvas.drawRect(
-        Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
-            Size(lineWidth, size.height),
-        ColorPool.PAINT[color]);
-  }
-}
-
-class StartLinePainter extends LinePainter {
-  StartLinePainter(super.color);
-
-  @override
-  void paint(Canvas canvas, Size size, int i, int dotIdx) {
-    canvas.drawRect(
-        Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
-            Size(lineWidth, size.height / 2),
-        ColorPool.PAINT[color]);
-  }
-}
-
-class StopLinePainter extends LinePainter {
-  StopLinePainter(super.color);
-
-  @override
-  void paint(Canvas canvas, Size size, int i, int dotIdx) {
-    canvas.drawRect(
-        Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2,
-                size.height / 2) &
-            Size(lineWidth, size.height / 2),
-        ColorPool.PAINT[color]);
+    if (type & typeStraight != 0) {
+      canvas.drawRect(
+          Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
+              Size(lineWidth, size.height),
+          ColorPool.PAINT[color]);
+    }
+    if (type & typeStart != 0) {
+      canvas.drawRect(
+          Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
+              Size(lineWidth, size.height / 2),
+          ColorPool.PAINT[color]);
+    }
+    if (type & typeStop != 0) {
+      canvas.drawRect(
+          Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2,
+                  size.height / 2) &
+              Size(lineWidth, size.height / 2),
+          ColorPool.PAINT[color]);
+    }
+    if (type & typeMerge != 0) {
+      canvas.drawLine(
+          Offset((dotRadius + lineWidth + linePadding) * i, size.height),
+          Offset(
+              (dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
+          ColorPool.PAINT[color]..strokeWidth = lineWidth);
+    }
+    if (type & typeFork != 0) {
+      canvas.drawLine(
+          Offset((dotRadius + lineWidth + linePadding) * i, 0),
+          Offset(
+              (dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
+          ColorPool.PAINT[color]..strokeWidth = lineWidth);
+    }
   }
 }
 
@@ -240,18 +205,18 @@ class LinePainterBuilder {
 
   LinePainterBuilder(this.color);
 
-  StartLinePainter start() => StartLinePainter(color);
+  LinePainter start() => LinePainter(color, LinePainter.typeStart);
 
-  StopLinePainter stop() => StopLinePainter(color);
+  LinePainter stop() => LinePainter(color, LinePainter.typeStop);
 
-  MergeLinePainter merge() => MergeLinePainter(color);
+  LinePainter merge() => LinePainter(color, LinePainter.typeMerge);
 
-  MergeAndStraightLinePainter mergeAndStraight() =>
-      MergeAndStraightLinePainter(color);
+  LinePainter mergeAndStraight() =>
+      LinePainter(color, LinePainter.typeMerge | LinePainter.typeStraight);
 
-  ForkLinePainter fork() => ForkLinePainter(color);
+  LinePainter fork() => LinePainter(color, LinePainter.typeFork);
 
-  StraightLinePainter straight() => StraightLinePainter(color);
+  LinePainter straight() => LinePainter(color, LinePainter.typeStraight);
 }
 
 /// Manages the colors of the commit tree.
