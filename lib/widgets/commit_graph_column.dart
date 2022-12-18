@@ -10,7 +10,8 @@ class CommitGraphBuilder {
     final List<LinePainter?> linePainters =
         List.filled(lines.length, null, growable: true);
     var mainLineFound = false;
-    final parentsHandled = List.filled(commit.parents.length, false);
+    final parents = commit.parents;
+    final parentsHandled = List.filled(parents.length, false);
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       if (line == null) {
@@ -20,11 +21,10 @@ class CommitGraphBuilder {
       if (line.nextCommit == sha) {
         if (!mainLineFound) {
           mainLineFound = true;
-          linePainters[i] = commit.parents.isNotEmpty
-              ? line.dotAndStraight()
-              : line.startDot();
-          if (commit.parents.isNotEmpty) {
-            line.nextCommit = commit.parents[0].sha;
+          linePainters[i] =
+              parents.isNotEmpty ? line.dotAndStraight() : line.startDot();
+          if (parents.isNotEmpty) {
+            line.nextCommit = parents[0].sha;
             parentsHandled[0] = true;
           } else {
             colorPool.relinquishColor(line.color);
@@ -53,11 +53,11 @@ class CommitGraphBuilder {
         }*/
       linePainters[i] = line.straight();
     }
-    for (int i = 0; i < commit.parents.length; i++) {
+    for (int i = 0; i < parents.length; i++) {
       if (parentsHandled[i]) continue;
       var gapIdx = linePainters.indexOf(null);
       var line = LinePainterBuilder(colorPool.requestColor());
-      line.nextCommit = commit.parents[i].sha;
+      line.nextCommit = parents[i].sha;
       LinePainter linePainter;
       if (!mainLineFound) {
         linePainter = line.stopDot();
