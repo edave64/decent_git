@@ -12,22 +12,29 @@ class CommitHistoryTable extends StatefulWidget {
 }
 
 class CommitHistoryTableState extends State<CommitHistoryTable> {
+  static const batchSize = 1000;
+
   String selectedContact = '';
-  List<CommitEntry>? commits;
-  Map<String, List<String>> map = {};
+  Map<String, List<String>> commitsToBranchNames = {};
+
+  RevWalk? Walk;
+  CommitGraphBuilder? graphBuilder;
+
+  bool _endReached = false;
+  EasyTableModel<CommitEntry>? _model;
 
   @override
   void initState() {
     super.initState();
     final repo = widget.sourceRepo;
-
     final walker = RevWalk(repo);
+    Walk = walker;
     for (var branch in repo.branches) {
       final sha = branch.target.sha;
-      if (map.containsKey(sha)) {
-        map[sha]!.add(branch.name);
+      if (commitsToBranchNames.containsKey(sha)) {
+        commitsToBranchNames[sha]!.add(branch.name);
       } else {
-        map[sha] = [branch.name];
+        commitsToBranchNames[sha] = [branch.name];
       }
       if (branch.target.pointer.address != 0) {
         walker.push(branch.target);
@@ -36,13 +43,61 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
       }
     }
 
+    _model = EasyTableModel<CommitEntry>(columns: [
+      EasyTableColumn(
+          name: 'Graph',
+          weight: 1,
+          cellBuilder: (context, row) {
+            return CustomPaint(
+              painter: GraphRowPainter(row.row.graphRow),
+              // Provide a the graph painter with the full width of the column
+              child: const SizedBox.expand(child: Text("")),
+            );
+          }),
+      EasyTableColumn(
+          name: 'Description',
+          weight: 5,
+          cellBuilder: (context, row) {
+            final text = Text(getCommitMessage(row.row.commit));
+            final branches = row.row.branches;
+
+            if (branches.isEmpty) return text;
+            return Row(children: [
+              text,
+              ...branches.map((String branch) {
+                return Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Chip(
+                      text: Text(branch),
+                    ));
+              })
+            ]);
+          },
+          stringValue: (row) => ""),
+      EasyTableColumn(
+          name: 'Commit', weight: 1, stringValue: (row) => row.commit.oid.sha),
+      EasyTableColumn(
+          name: 'Author',
+          weight: 1,
+          stringValue: (row) => row.commit.author.name),
+      EasyTableColumn(
+          name: 'Date', weight: 1, intValue: (row) => row.commit.time)
+    ]);
+
     walker.sorting({GitSort.topological, GitSort.time});
-    final graphBuild = CommitGraphBuilder();
-    commits = List.empty(growable: true);
-    for (final commit in walker.walk(limit: 1000)) {
-      commits!.add(CommitEntry(commit, graphBuild.buildGraphRow(commit),
-          map[commit.oid.sha] ?? List.empty()));
+    graphBuilder = CommitGraphBuilder();
+    loadNextBatch();
+  }
+
+  void loadNextBatch() {
+    if (_endReached) return;
+    List<CommitEntry> commits = [];
+    for (final commit in Walk!.walk(limit: batchSize)) {
+      commits.add(CommitEntry(commit, graphBuilder!.buildGraphRow(commit),
+          commitsToBranchNames[commit.oid.sha] ?? List.empty()));
     }
+    _endReached = commits.length < batchSize;
+    _model!.addRows(commits);
   }
 
   @override
@@ -54,50 +109,18 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
             decoration: BoxDecoration(border: null),
             row: RowThemeData(dividerThickness: 0)),
         child: EasyTable<CommitEntry>(
-          EasyTableModel<CommitEntry>(rows: commits!, columns: [
-            EasyTableColumn(
-                name: 'Graph',
-                weight: 1,
-                cellBuilder: (context, row) {
-                  return CustomPaint(
-                    painter: GraphRowPainter(row.row.graphRow),
-                    // Provide a the graph painter with the full width of the column
-                    child: const SizedBox.expand(child: Text("")),
-                  );
-                }),
-            EasyTableColumn(
-                name: 'Description',
-                weight: 5,
-                cellBuilder: (context, row) {
-                  final text = Text(getCommitMessage(row.row.commit));
-                  final branches = row.row.branches;
-
-                  if (branches.isEmpty) return text;
-                  return Row(children: [
-                    text,
-                    ...branches.map((String branch) {
-                      return Padding(
-                          padding: const EdgeInsets.only(left: 4),
-                          child: Chip(
-                            text: Text(branch),
-                          ));
-                    })
-                  ]);
-                },
-                stringValue: (row) => ""),
-            EasyTableColumn(
-                name: 'Commit',
-                weight: 1,
-                stringValue: (row) => row.commit.oid.sha),
-            EasyTableColumn(
-                name: 'Author',
-                weight: 1,
-                stringValue: (row) => row.commit.author.name),
-            EasyTableColumn(
-                name: 'Date', weight: 1, intValue: (row) => row.commit.time)
-          ]),
+          _model,
           columnsFit: true,
+          lastRowWidget: _endReached ? null : const ProgressBar(),
+          onLastRowWidget: _onLastRowWidget,
         ));
+  }
+
+  void _onLastRowWidget(bool visible) {
+    if (!visible) return;
+    setState(() {
+      loadNextBatch();
+    });
   }
 }
 
