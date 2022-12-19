@@ -143,38 +143,28 @@ class LinePainter {
   LinePainter(this.color, this.type);
 
   void paint(Canvas canvas, Size size, int i, int dotIdx) {
+    const offsetXFactor = dotRadius + lineWidth + linePadding;
+    final colorPainter = ColorPool.PAINT[color]..strokeWidth = lineWidth;
+    final offsetX = offsetXFactor * i;
     if (type & typeStraight != 0) {
-      canvas.drawRect(
-          Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
-              Size(lineWidth, size.height),
-          ColorPool.PAINT[color]);
+      canvas.drawLine(
+          Offset(offsetX, 0), Offset(offsetX, size.height), colorPainter);
     }
     if (type & typeStart != 0) {
-      canvas.drawRect(
-          Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2, 0) &
-              Size(lineWidth, size.height / 2),
-          ColorPool.PAINT[color]);
+      canvas.drawLine(
+          Offset(offsetX, 0), Offset(offsetX, size.height / 2), colorPainter);
     }
     if (type & typeStop != 0) {
-      canvas.drawRect(
-          Offset((dotRadius + lineWidth + linePadding) * i - lineWidth / 2,
-                  size.height / 2) &
-              Size(lineWidth, size.height / 2),
-          ColorPool.PAINT[color]);
+      canvas.drawLine(Offset(offsetX, size.height / 2),
+          Offset(offsetX, size.height), colorPainter);
     }
     if (type & typeMerge != 0) {
-      canvas.drawLine(
-          Offset((dotRadius + lineWidth + linePadding) * i, size.height),
-          Offset(
-              (dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
-          ColorPool.PAINT[color]..strokeWidth = lineWidth);
+      canvas.drawLine(Offset(offsetX, size.height),
+          Offset(offsetXFactor * dotIdx, size.height / 2), colorPainter);
     }
     if (type & typeFork != 0) {
-      canvas.drawLine(
-          Offset((dotRadius + lineWidth + linePadding) * i, 0),
-          Offset(
-              (dotRadius + lineWidth + linePadding) * dotIdx, size.height / 2),
-          ColorPool.PAINT[color]..strokeWidth = lineWidth);
+      canvas.drawLine(Offset(offsetX, 0),
+          Offset(offsetXFactor * dotIdx, size.height / 2), colorPainter);
     }
   }
 }
