@@ -104,6 +104,7 @@ class CommitGraphRow {
 const double lineWidth = 2;
 const double linePadding = 2;
 const double dotRadius = 7;
+const offsetXFactor = dotRadius + lineWidth + linePadding;
 
 class GraphRowPainter extends CustomPainter {
   final CommitGraphRow row;
@@ -143,42 +144,45 @@ class LinePainter {
   LinePainter(this.color, this.type);
 
   void paint(Canvas canvas, Size size, int i, int dotIdx) {
-    const offsetXFactor = dotRadius + lineWidth + linePadding;
     final colorPainter = ColorPool.PAINT[color]..strokeWidth = lineWidth;
-    final offsetX = offsetXFactor * i;
-    if (type & typeStraight != 0) {
-      canvas.drawLine(
-          Offset(offsetX, 0), Offset(offsetX, size.height), colorPainter);
-    }
-    if (type & typeStart != 0) {
-      canvas.drawLine(
-          Offset(offsetX, 0), Offset(offsetX, size.height / 2), colorPainter);
-    }
-    if (type & typeStop != 0) {
-      canvas.drawLine(Offset(offsetX, size.height / 2),
-          Offset(offsetX, size.height), colorPainter);
+    final offsetX = dotRadius + offsetXFactor * i;
+    if (offsetX < size.width) {
+      if (type & typeStraight != 0) {
+        canvas.drawLine(
+            Offset(offsetX, 0), Offset(offsetX, size.height), colorPainter);
+      }
+      if (type & typeStart != 0) {
+        canvas.drawLine(
+            Offset(offsetX, 0), Offset(offsetX, size.height / 2), colorPainter);
+      }
+      if (type & typeStop != 0) {
+        canvas.drawLine(Offset(offsetX, size.height / 2),
+            Offset(offsetX, size.height), colorPainter);
+      }
     }
     if (type & typeMerge != 0) {
-      canvas.drawLine(Offset(offsetX, size.height),
-          Offset(offsetXFactor * dotIdx, size.height / 2), colorPainter);
+      canvas.drawLine(
+          Offset(offsetX, size.height),
+          Offset(dotRadius + offsetXFactor * dotIdx, size.height / 2),
+          colorPainter);
     }
     if (type & typeFork != 0) {
-      canvas.drawLine(Offset(offsetX, 0),
-          Offset(offsetXFactor * dotIdx, size.height / 2), colorPainter);
+      canvas.drawLine(
+          Offset(offsetX, 0),
+          Offset(dotRadius + offsetXFactor * dotIdx, size.height / 2),
+          colorPainter);
     }
   }
 }
 
 void paintDot(Canvas canvas, Size size, int i, int color) {
-  Offset circleMid =
-      Offset((dotRadius + lineWidth + linePadding) * i, size.height / 2);
+  Offset circleMid = Offset(dotRadius + offsetXFactor * i, size.height / 2);
   //canvas.drawCircle(circleMid, dotRadius + 1, Paint()..color = Colors.white);
   canvas.drawCircle(circleMid, dotRadius, ColorPool.PAINT[color]);
 }
 
 void paintDotBackground(Canvas canvas, Size size, int i, int color) {
-  Offset circleMid =
-      Offset((dotRadius + lineWidth + linePadding) * i, size.height / 2);
+  Offset circleMid = Offset(dotRadius + offsetXFactor * i, size.height / 2);
   canvas.drawRect(
       Offset(circleMid.dx, circleMid.dy - dotRadius) &
           Size(size.width - circleMid.dx, dotRadius * 2),
