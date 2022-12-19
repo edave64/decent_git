@@ -43,7 +43,7 @@ void main() async {
   }
   await WindowManager.instance.ensureInitialized();
   await flutter_acrylic.Window.initialize();
-  runApp(const MyApp());
+  runApp(const DecentGit());
   await windowManager.waitUntilReadyToShow();
   await windowManager.setTitleBarStyle(
     TitleBarStyle.hidden,
@@ -57,8 +57,8 @@ void main() async {
   //await windowManager.setSkipTaskbar(false);
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class DecentGit extends StatelessWidget {
+  const DecentGit({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -93,21 +93,21 @@ class MyApp extends StatelessWidget {
               child: child!,
             );
           },
-          home: const MyHomePage(),
+          home: const MainPage(),
         );
       },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+class MainPage extends StatefulWidget {
+  const MainPage({Key? key}) : super(key: key);
 
   @override
-  MyHomePageState createState() => MyHomePageState();
+  MainPageState createState() => MainPageState();
 }
 
-class MyHomePageState extends State<MyHomePage> with WindowListener {
+class MainPageState extends State<MainPage> with WindowListener {
   bool value = false;
 
   int index = 0;
@@ -144,7 +144,6 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
-    final appTheme = context.watch<AppTheme>();
     final repo = this.repo;
     return NavigationView(
       key: viewKey,
