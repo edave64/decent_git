@@ -33,24 +33,6 @@ class AppTheme extends ChangeNotifier {
     notifyListeners();
   }
 
-  PaneDisplayMode _displayMode = PaneDisplayMode.auto;
-
-  PaneDisplayMode get displayMode => _displayMode;
-
-  set displayMode(PaneDisplayMode displayMode) {
-    _displayMode = displayMode;
-    notifyListeners();
-  }
-
-  NavigationIndicators _indicator = NavigationIndicators.sticky;
-
-  NavigationIndicators get indicator => _indicator;
-
-  set indicator(NavigationIndicators indicator) {
-    _indicator = indicator;
-    notifyListeners();
-  }
-
   TextDirection _textDirection = TextDirection.ltr;
 
   TextDirection get textDirection => _textDirection;

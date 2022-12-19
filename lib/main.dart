@@ -173,7 +173,7 @@ class MyHomePageState extends State<MyHomePage> with WindowListener {
         onChanged: (i) {
           setState(() => index = i);
         },
-        displayMode: appTheme.displayMode,
+        displayMode: PaneDisplayMode.auto,
         indicator: const StickyNavigationIndicator(),
         items: [
           PaneItemHeader(header: const Text('Workspace')),
