@@ -90,7 +90,12 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
           weight: 1,
           stringValue: (row) => row.commit.author.name),
       EasyTableColumn(
-          name: 'Date', weight: 1, intValue: (row) => row.commit.time)
+          name: 'Date',
+          weight: 1,
+          stringValue: (row) =>
+              DateTime.fromMillisecondsSinceEpoch(row.commit.time * 1000)
+                  .toLocal()
+                  .toString())
     ]);
 
     walker.sorting({GitSort.topological, GitSort.time});
