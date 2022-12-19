@@ -113,6 +113,7 @@ class GraphRowPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    canvas.clipRect(Offset.zero & size);
     var dotIdx = row.dotPosition;
     var dotColor = row.linePainters[dotIdx]!.color;
     paintDotBackground(canvas, size, dotIdx, dotColor);
