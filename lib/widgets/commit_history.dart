@@ -58,22 +58,29 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
           name: 'Description',
           weight: 5,
           cellBuilder: (context, row) {
-            final text = Text(getCommitMessage(row.row.commit));
+            final text = Text(
+              getCommitMessage(row.row.commit),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              softWrap: false,
+              textWidthBasis: TextWidthBasis.parent,
+            );
             final branches = row.row.branches;
 
             if (branches.isEmpty) return text;
-            return Row(children: [
-              text,
-              ...branches.map((String branch) {
-                return Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Chip(
-                      text: Text(branch),
-                    ));
-              })
-            ]);
-          },
-          stringValue: (row) => ""),
+            return ClipRect(
+                clipBehavior: Clip.antiAlias,
+                child: Row(children: [
+                  text,
+                  ...branches.map((String branch) {
+                    return Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Chip(
+                          text: Text(branch),
+                        ));
+                  })
+                ]));
+          }),
       EasyTableColumn(
           name: 'Commit', weight: 1, stringValue: (row) => row.commit.oid.sha),
       EasyTableColumn(
