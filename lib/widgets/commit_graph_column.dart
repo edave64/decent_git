@@ -45,7 +45,7 @@ class CommitGraphBuilder {
       if (parents.length > 1) {
         var fittingNextIdx =
             parents.indexWhere((e) => e.sha == line.nextCommit);
-        if (fittingNextIdx != -1) {
+        if (fittingNextIdx != -1 && mergeableLines[fittingNextIdx] == -1) {
           mergeableLines[fittingNextIdx] = i;
         }
       }
