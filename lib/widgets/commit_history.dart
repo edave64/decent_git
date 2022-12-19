@@ -82,7 +82,9 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
                 ]));
           }),
       EasyTableColumn(
-          name: 'Commit', weight: 1, stringValue: (row) => row.commit.oid.sha),
+          name: 'Commit',
+          weight: 1,
+          stringValue: (row) => row.commit.oid.sha.substring(0, 7)),
       EasyTableColumn(
           name: 'Author',
           weight: 1,
