@@ -13,12 +13,12 @@ import 'package:decent_git/screens/selectRepo.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide Page;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart' as flutter_acrylic;
-import 'package:libgit2dart/libgit2dart.dart';
 import 'package:provider/provider.dart';
 import 'package:system_theme/system_theme.dart';
 import 'package:url_launcher/link.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'known_repositories.dart';
 import 'screens/settings.dart';
 import 'theme.dart';
 
@@ -107,13 +107,11 @@ class MainPage extends StatefulWidget {
   MainPageState createState() => MainPageState();
 }
 
-class MainPageState extends State<MainPage> with WindowListener {
+class MainPageState extends State<MainPage>
+    with WindowListener, KnownRepositories {
   bool value = false;
-
   int index = 0;
-
   final viewKey = GlobalKey();
-  Repository? repo = null;
 
   final List<NavigationPaneItem> footerItems = [
     PaneItemSeparator(),
@@ -134,6 +132,7 @@ class MainPageState extends State<MainPage> with WindowListener {
   void initState() {
     windowManager.addListener(this);
     super.initState();
+    loadRepoNames();
   }
 
   @override
@@ -157,14 +156,30 @@ class MainPageState extends State<MainPage> with WindowListener {
             ),
           );
         }(),
-        actions: Row(mainAxisAlignment: MainAxisAlignment.end, children: const [
-          ComboBox(items: [
-            ComboBoxItem(
-              value: "#new",
-              child: Text("Add new Repository"),
-            )
-          ], value: "#new"),
-          WindowButtons(),
+        actions: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+          ComboBox(
+              items: [
+                const ComboBoxItem(
+                  value: KnownRepositories.newRepoPlaceholder,
+                  child: Text("Add new Repository"),
+                ),
+                ...repoNames.keys.map((key) => ComboBoxItem(
+                      value: key,
+                      child: Text(key),
+                    ))
+              ],
+              value: selectedRepo,
+              onChanged: (val) {
+                if (val == KnownRepositories.newRepoPlaceholder) {
+                  setState(() {
+                    this.repo = null;
+                    selectedRepo = KnownRepositories.newRepoPlaceholder;
+                  });
+                } else {
+                  onRepoSelect(context, val!);
+                }
+              }),
+          const WindowButtons(),
         ]),
       ),
       pane: NavigationPane(
@@ -180,34 +195,11 @@ class MainPageState extends State<MainPage> with WindowListener {
             icon: const Icon(FluentIcons.all_apps),
             title: const Text('History'),
             body: repo == null
-                ? SelectRepo(onSelected: (String path) {
-                    final Repository repo;
-                    try {
-                      repo = Repository.open(path);
-                    } catch (e) {
-                      showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return ContentDialog(
-                              title: const Text("Error"),
-                              content: Text(
-                                  "Failed to open repository '$path'\n\n${e.toString()}"),
-                              actions: [
-                                TextButton(
-                                  child: const Text("OK"),
-                                  onPressed: () {
-                                    Navigator.pop(context, 'User deleted file');
-                                  },
-                                ),
-                              ],
-                            );
-                          });
-                      return;
-                    }
-                    setState(() {
-                      this.repo = repo;
-                    });
-                  })
+                ? SelectRepo(
+                    repos: repoNames,
+                    onSelected: (String name, String path) {
+                      onRepoAdded(context, name, path);
+                    })
                 : History(sourceRepo: repo),
           ),
           PaneItem(
