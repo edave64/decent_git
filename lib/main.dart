@@ -9,7 +9,7 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import 'package:decent_git/screens/history.dart';
-import 'package:decent_git/screens/selectRepo.dart';
+import 'package:decent_git/screens/select_repo.dart';
 import 'package:fluent_ui/fluent_ui.dart' hide Page;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart' as flutter_acrylic;
@@ -75,13 +75,13 @@ class DecentGit extends StatelessWidget {
           themeMode: appTheme.mode,
           debugShowCheckedModeBanner: false,
           color: appTheme.color,
-          darkTheme: ThemeData(
+          darkTheme: FluentThemeData(
             brightness: Brightness.dark,
             accentColor: appTheme.color,
             visualDensity: VisualDensity.standard,
             focusTheme: focusTheme,
           ),
-          theme: ThemeData(
+          theme: FluentThemeData(
             accentColor: appTheme.color,
             visualDensity: VisualDensity.standard,
             focusTheme: focusTheme,
@@ -225,9 +225,11 @@ class MainPageState extends State<MainPage>
 
   @override
   void onWindowClose() async {
+    final navigator = Navigator.of(context);
     if (!await windowManager.isPreventClose()) return;
 
-    showDialog(
+    if (!mounted) return; // Verify the context is still valid.
+    await showDialog(
       context: context,
       builder: (_) {
         return ContentDialog(
@@ -237,20 +239,18 @@ class MainPageState extends State<MainPage>
             FilledButton(
               child: const Text('Yes'),
               onPressed: () {
-                Navigator.pop(context);
                 windowManager.destroy();
               },
             ),
             Button(
               child: const Text('No'),
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () {},
             ),
           ],
         );
       },
     );
+    navigator.pop();
   }
 
   void openRepository() {}
@@ -261,7 +261,7 @@ class WindowButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = FluentTheme.of(context);
+    final FluentThemeData theme = FluentTheme.of(context);
 
     return SizedBox(
       width: 138,

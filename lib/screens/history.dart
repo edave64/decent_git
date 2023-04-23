@@ -2,14 +2,13 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:libgit2dart/libgit2dart.dart';
 
 import '../widgets/commit_history.dart';
-import '../widgets/page.dart' as PageWidget;
+import '../widgets/page.dart' as page_widget;
 
-class History extends PageWidget.Page {
+class History extends page_widget.Page {
   History({super.key, required this.sourceRepo});
 
   final Repository? sourceRepo;
 
-  @override
   Widget buildHeader(BuildContext context) {
     return const PageHeader(title: Text('History'));
   }
@@ -38,7 +37,7 @@ class History extends PageWidget.Page {
         ],
       ),
       content: repo == null
-          ? Text("No Repository selected!")
+          ? const Text("No Repository selected!")
           : CommitHistoryTable(sourceRepo: repo),
     );
   }

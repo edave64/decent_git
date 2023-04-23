@@ -1,6 +1,7 @@
 import 'package:decent_git/widgets/commit_graph_column.dart';
 import 'package:easy_table/easy_table.dart';
 import 'package:fluent_ui/fluent_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:libgit2dart/libgit2dart.dart';
 
 class CommitHistoryTable extends StatefulWidget {
@@ -17,7 +18,7 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
   String selectedContact = '';
   Map<String, List<String>> commitsToBranchNames = {};
 
-  RevWalk? Walk;
+  RevWalk? walk;
   CommitGraphBuilder? graphBuilder;
 
   bool _endReached = false;
@@ -28,7 +29,7 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
     super.initState();
     final repo = widget.sourceRepo;
     final walker = RevWalk(repo);
-    Walk = walker;
+    walk = walker;
     for (var branch in repo.branches) {
       final sha = branch.target.sha;
       if (commitsToBranchNames.containsKey(sha)) {
@@ -36,10 +37,13 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
       } else {
         commitsToBranchNames[sha] = [branch.name];
       }
+      // ignore: invalid_use_of_internal_member
       if (branch.target.pointer.address != 0) {
         walker.push(branch.target);
       } else {
-        print(branch);
+        if (kDebugMode) {
+          print(branch);
+        }
       }
     }
 
@@ -115,7 +119,7 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
   void loadNextBatch() {
     if (_endReached) return;
     List<CommitEntry> commits = [];
-    for (final commit in Walk!.walk(limit: batchSize)) {
+    for (final commit in walk!.walk(limit: batchSize)) {
       commits.add(CommitEntry(commit, graphBuilder!.buildGraphRow(commit),
           commitsToBranchNames[commit.oid.sha] ?? List.empty()));
     }

@@ -65,7 +65,7 @@ void errorMessage(BuildContext context, String content) {
           title: const Text("Error"),
           content: Text(content),
           actions: [
-            TextButton(
+            HyperlinkButton(
               child: const Text("OK"),
               onPressed: () {
                 Navigator.pop(context);

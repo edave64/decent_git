@@ -145,7 +145,7 @@ class LinePainter {
   LinePainter(this.color, this.type);
 
   void paint(Canvas canvas, Size size, int i, int dotIdx) {
-    final colorPainter = ColorPool.PAINT[color]..strokeWidth = lineWidth;
+    final colorPainter = ColorPool.paint[color]..strokeWidth = lineWidth;
     final offsetX = dotRadius + offsetXFactor * i;
     if (offsetX < size.width) {
       if (type & typeStraight != 0) {
@@ -179,7 +179,7 @@ class LinePainter {
 void paintDot(Canvas canvas, Size size, int i, int color) {
   Offset circleMid = Offset(dotRadius + offsetXFactor * i, size.height / 2);
   //canvas.drawCircle(circleMid, dotRadius + 1, Paint()..color = Colors.white);
-  canvas.drawCircle(circleMid, dotRadius, ColorPool.PAINT[color]);
+  canvas.drawCircle(circleMid, dotRadius, ColorPool.paint[color]);
 }
 
 void paintDotBackground(Canvas canvas, Size size, int i, int color) {
@@ -187,11 +187,11 @@ void paintDotBackground(Canvas canvas, Size size, int i, int color) {
   canvas.drawRect(
       Offset(circleMid.dx, circleMid.dy - dotRadius) &
           Size(size.width - circleMid.dx, dotRadius * 2),
-      ColorPool.PAINT_TRANSPARENT[color]);
+      ColorPool.paintTransparent[color]);
   canvas.drawRect(
       Offset(size.width - 1, circleMid.dy - dotRadius) &
           const Size(1, dotRadius * 2),
-      ColorPool.PAINT[color]);
+      ColorPool.paint[color]);
 }
 
 class LinePainterBuilder {
@@ -218,7 +218,7 @@ class LinePainterBuilder {
 /// Should always return the currently least used colors.
 /// Secondarily, it tries to cycle colors make branches more distinct.
 class ColorPool {
-  static final COLORS = <Color>[
+  static final colors = <Color>[
     Colors.blue,
     Colors.purple,
     Colors.red,
@@ -228,21 +228,21 @@ class ColorPool {
     Colors.teal
   ];
 
-  static final PAINT =
-      COLORS.map((color) => Paint()..color = color).toList(growable: false);
-  static final PAINT_TRANSPARENT = COLORS
+  static final paint =
+      colors.map((color) => Paint()..color = color).toList(growable: false);
+  static final paintTransparent = colors
       .map((color) => Paint()..color = color.withAlpha(50))
       .toList(growable: false);
 
-  var activeAssignments = List<int>.filled(COLORS.length, 0);
+  var activeAssignments = List<int>.filled(colors.length, 0);
   var lastAssignment = -1;
   var highestAssignments = 0;
 
   int requestColor() {
     var leastAssignmentsI = -1;
     var leastAssignments = highestAssignments + 1;
-    for (var i = 0; i < COLORS.length; i++) {
-      final j = (i + lastAssignment + 1) % COLORS.length;
+    for (var i = 0; i < colors.length; i++) {
+      final j = (i + lastAssignment + 1) % colors.length;
       if (activeAssignments[j] < leastAssignments) {
         leastAssignments = activeAssignments[j];
         leastAssignmentsI = j;
