@@ -33,9 +33,9 @@ class SelectRepo extends ScrollablePage {
                     Expanded(
                       child: InfoLabel(
                           label: "Path to the git folder",
-                      child: TextBox(
-                          controller: path,
-                          onChanged: (text) => autocompleteName(text))),
+                          child: TextBox(
+                              controller: path,
+                              onChanged: (text) => autocompleteName(text))),
                     ),
                     const SizedBox(width: 10.0),
                     IconButton(
@@ -56,12 +56,12 @@ class SelectRepo extends ScrollablePage {
                   Expanded(
                       child: InfoLabel(
                           label: "Project name",
-                      child: TextBox(
-                    controller: name,
-                    onChanged: (val) {
-                      userModifiedProjectName = true;
-                    },
-                  )))
+                          child: TextBox(
+                            controller: name,
+                            onChanged: (val) {
+                              userModifiedProjectName = true;
+                            },
+                          )))
                 ])
               ],
             ),
