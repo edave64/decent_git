@@ -46,7 +46,9 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
     _model = EasyTableModel<CommitEntry>(columns: [
       EasyTableColumn(
           name: 'Graph',
-          weight: 1,
+          grow: 1,
+          sortable: false,
+          resizable: true,
           cellBuilder: (context, row) {
             return CustomPaint(
               painter: GraphRowPainter(row.row.graphRow),
@@ -56,7 +58,9 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
           }),
       EasyTableColumn(
           name: 'Description',
-          weight: 5,
+          grow: 5,
+          sortable: false,
+          resizable: true,
           cellBuilder: (context, row) {
             final text = Text(
               getCommitMessage(row.row.commit),
@@ -83,15 +87,20 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
           }),
       EasyTableColumn(
           name: 'Commit',
-          weight: 1,
+          grow: 1,
+          sortable: false,
           stringValue: (row) => row.commit.oid.sha.substring(0, 7)),
       EasyTableColumn(
           name: 'Author',
-          weight: 1,
+          grow: 1,
+          sortable: false,
+          resizable: true,
           stringValue: (row) => row.commit.author.name),
       EasyTableColumn(
           name: 'Date',
-          weight: 1,
+          grow: 1,
+          sortable: false,
+          resizable: true,
           stringValue: (row) =>
               DateTime.fromMillisecondsSinceEpoch(row.commit.time * 1000)
                   .toLocal()
@@ -124,7 +133,7 @@ class CommitHistoryTableState extends State<CommitHistoryTable> {
             row: RowThemeData(dividerThickness: 0)),
         child: EasyTable<CommitEntry>(
           _model,
-          columnsFit: true,
+          columnWidthBehavior: ColumnWidthBehavior.fit,
           lastRowWidget: _endReached ? null : const ProgressBar(),
           onLastRowWidget: _onLastRowWidget,
         ));

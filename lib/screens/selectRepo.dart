@@ -31,10 +31,11 @@ class SelectRepo extends ScrollablePage {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Expanded(
+                      child: InfoLabel(
+                          label: "Path to the git folder",
                       child: TextBox(
-                          header: "Path to the git folder",
                           controller: path,
-                          onChanged: (text) => autocompleteName(text)),
+                          onChanged: (text) => autocompleteName(text))),
                     ),
                     const SizedBox(width: 10.0),
                     IconButton(
@@ -53,13 +54,14 @@ class SelectRepo extends ScrollablePage {
                 const SizedBox(height: 10.0),
                 Row(children: [
                   Expanded(
+                      child: InfoLabel(
+                          label: "Project name",
                       child: TextBox(
-                    header: "Project name",
                     controller: name,
                     onChanged: (val) {
                       userModifiedProjectName = true;
                     },
-                  ))
+                  )))
                 ])
               ],
             ),

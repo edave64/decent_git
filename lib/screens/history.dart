@@ -18,10 +18,28 @@ class History extends PageWidget.Page {
   Widget build(BuildContext context) {
     assert(debugCheckHasMediaQuery(context));
     final repo = sourceRepo;
-    if (repo == null) {
-      return Text("No Repository selected!");
-    } else {
-      return CommitHistoryTable(sourceRepo: repo);
-    }
+
+    return ScaffoldPage(
+      padding: const EdgeInsets.all(0),
+      header: CommandBar(
+        primaryItems: [
+          CommandBarButton(
+              icon: const Icon(FluentIcons.download),
+              label: const Text("Fetch"),
+              onPressed: () {
+                if (repo == null) return;
+                for (final name in repo.remotes) {
+                  final remote = Remote.lookup(repo: repo, name: name);
+                  remote.fetch(
+                      callbacks: Callbacks(transferProgress: (progess) {}));
+                }
+                setState(() {});
+              })
+        ],
+      ),
+      content: repo == null
+          ? Text("No Repository selected!")
+          : CommitHistoryTable(sourceRepo: repo),
+    );
   }
 }
